@@ -22,9 +22,9 @@ def _update_virtualenv():
     run('./virtualenv/bin/pip3 install -r requirements.txt')
 
 
-def _create_or_update_dotenv():
+def _create_or_update_dotenv(site_url):
     append('.env', 'DJANGO_DEBUG_FALSE=y')
-    append('.env', f'SITENAME={env.host}')
+    append('.env', f'SITENAME={site_url}')
     current_contents = run('cat .env')
     if 'DJANGO_SECRET_KEY' not in current_contents:
         new_secret = ''.join(random.SystemRandom().choices(
@@ -41,12 +41,14 @@ def _update_database():
     run('./virtualenv/bin/python3 manage.py migrate --noinput')
 
 
-def deploy():
-    site_folder = f'/home/{env.user}/sites/{env.host}'
+def deploy(site_url="staging.geekpj.com"):
+    print(f"Connecting to EC2 instance: {env.host} as user: {env.user}")
+    print(f"Site URL = http://{site_url}")
+    site_folder = f'/home/{env.user}/sites/{site_url}'
     run(f'mkdir -p {site_folder}')
     with cd(site_folder):
         _get_latest_source()
         _update_virtualenv()
-        _create_or_update_dotenv()
+        _create_or_update_dotenv(site_url)
         _update_static_files()
         _update_database()
